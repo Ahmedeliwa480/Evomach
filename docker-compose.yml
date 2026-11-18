@@ -1,0 +1,50 @@
+# EvoMach - Docker Compose
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: evomach-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-evomach}
+      POSTGRES_USER: ${POSTGRES_USER:-evomach}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - evomach-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: evomach-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - evomach-network
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: evomach-mqtt
+    restart: unless-stopped
+    ports:
+      - 1883:1883
+      - 9001:9001
+    volumes:
+      - ./infrastructure/mqtt/config:/mosquitto/config
+      - ./infrastructure/mqtt/data:/mosquitto/data
+      - ./infrastructure/mqtt/log:/mosquitto/log
+    networks:
+      - evomach-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  evomach-network:
+    driver: bridge
